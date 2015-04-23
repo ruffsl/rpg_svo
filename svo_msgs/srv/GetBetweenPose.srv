@@ -1,0 +1,4 @@
+time timeA
+time timeB
+---
+geometry_msgs/Pose A2B

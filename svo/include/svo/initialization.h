@@ -39,6 +39,7 @@ public:
   ~KltHomographyInit() {};
   InitResult addFirstFrame(FramePtr frame_ref);
   InitResult addSecondFrame(FramePtr frame_ref);
+  InitResult addSecondFrame(FramePtr frame_ref, SE3 pose);
   void reset();
 
 protected:

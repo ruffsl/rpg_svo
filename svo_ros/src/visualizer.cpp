@@ -207,7 +207,7 @@ void Visualizer::visualizeMarkers(
 
   vk::output_helper::publishTfTransform(
       frame->T_f_w_*T_world_from_vision_.inverse(),
-      ros::Time(frame->timestamp_), "cam_pos", "world", br_);
+      ros::Time(frame->timestamp_), "cam_pos", "odom", br_);
 
   if(pub_frames_.getNumSubscribers() > 0 || pub_points_.getNumSubscribers() > 0)
   {

@@ -12,10 +12,21 @@ find_package(catkin REQUIRED COMPONENTS
 FILE(GLOB messages_to_build RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/msg"
     "${CMAKE_CURRENT_SOURCE_DIR}/msg/*.msg")
 
+
+# search for all srv files
+FILE(GLOB services_to_build RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/srv"
+    "${CMAKE_CURRENT_SOURCE_DIR}/srv/*.srv")
+
 # notify catkin to look at the previously found msg files
 add_message_files(
   FILES
   ${messages_to_build}
+)
+
+# Generate services in the 'srv' folder
+add_service_files(
+  FILES
+  ${services_to_build}
 )
 
 # build the header files from the msg files, and notify catkin about the dependencies

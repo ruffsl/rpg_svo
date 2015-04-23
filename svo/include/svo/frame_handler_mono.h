@@ -60,6 +60,12 @@ public:
       const cv::Mat& img,
       const double timestamp);
 
+
+  SE3 init_pose;
+  bool init_flag = false;
+
+  void InitPose(SE3 pose);
+
 protected:
   vk::AbstractCamera* cam_;                     //!< Camera model, can be ATAN, Pinhole or Ocam (see vikit).
   Reprojector reprojector_;                     //!< Projects points from other keyframes into the current frame
@@ -78,6 +84,7 @@ protected:
 
   /// Processes all frames after the first frame until a keyframe is selected.
   virtual UpdateResult processSecondFrame();
+  virtual UpdateResult processSecondFrame(SE3 pose);
 
   /// Processes all frames after the first two keyframes.
   virtual UpdateResult processFrame();

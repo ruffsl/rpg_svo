@@ -35,6 +35,8 @@
 #include <vikit/camera_loader.h>
 #include <vikit/user_input_thread.h>
 
+#include <svo_msgs/GetBetweenPose.h>
+
 namespace svo {
 
 /// SVO Interface
@@ -50,10 +52,22 @@ public:
   std::string remote_input_;
   vk::AbstractCamera* cam_;
   bool quit_;
+
+  ros::Time time_first, time_second;
+  ros::Time time_window = ros::Time(5,0);
+  bool init_flag =  false;
+  bool inited_flag =  false;
+  int flagforframe =1;
+
   VoNode();
   ~VoNode();
   void imgCb(const sensor_msgs::ImageConstPtr& msg);
+  bool initCb();
   void processUserActions();
+
+  ros::ServiceClient client;
+  svo_msgs::GetBetweenPose srv;
+
   void remoteKeyCb(const std_msgs::StringConstPtr& key_input);
 };
 
@@ -95,6 +109,48 @@ VoNode::~VoNode()
     user_input_thread_->stop();
 }
 
+
+bool VoNode::initCb(){
+    srv.request.timeA = time_first;
+    srv.request.timeB = time_second;
+
+    std::cout<<"\ntime_first:\n"<<(time_first)<<std::endl;
+    std::cout<<"\ntime_second:\n"<<(time_second)<<std::endl;
+
+    ROS_INFO("Calling service get_between_pose");
+
+    if (client.call(srv)){
+        ROS_INFO("Got inti pose from get_between_pose srv!");
+        geometry_msgs::Pose m = srv.response.A2B;;
+        Eigen::Affine3d e = Eigen::Translation3d(m.position.x,
+                                               m.position.y,
+                                               m.position.z) *
+              Eigen::Quaterniond(m.orientation.w,
+                                 m.orientation.x,
+                                 m.orientation.y,
+                                 m.orientation.z);
+
+        Eigen::Matrix3d rot = e.rotation();
+        Eigen::Vector3d trans = e.translation();
+
+        std::cout<<"Time diff in first and second:\n"<<(time_second-time_first)<<std::endl;
+        std::cout<<time_first<<std::endl<<time_second<<std::endl;
+
+        SE3 current_trans = SE3(rot,trans);
+
+
+        std::cout<<"trans:\n"<<trans<<std::endl;
+        std::cout<<"rot:\n"<<rot<<std::endl;
+
+        vo_->InitPose(current_trans);
+        return true;
+    }
+    else{
+        ROS_ERROR("Failed to call service get_between_pose");
+        return false;
+    }
+}
+
 void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
 {
   cv::Mat img;
@@ -105,6 +161,24 @@ void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
   }
   processUserActions();
   vo_->addImage(img, msg->header.stamp.toSec());
+
+  if((vo_->stage() == FrameHandlerMono::STAGE_SECOND_FRAME) && !init_flag)
+  {    std::cout<<"the second frame at time: "<<msg->header.stamp.toSec()<<std::endl;
+       time_first = msg->header.stamp;
+       init_flag = true;
+  }
+
+  if((vo_->stage() == FrameHandlerMono::STAGE_DEFAULT_FRAME) && init_flag )
+  {    std::cout<<"the default frame at time: "<<msg->header.stamp.toSec()<<std::endl;
+       time_second = msg->header.stamp;
+       std::cout<<"init_flag: "<<init_flag<<std::endl;
+       init_flag = false;
+  }
+
+  if((abs((time_second - msg->header.stamp).toSec()) > time_window.toNSec()) && !inited_flag){
+      inited_flag = VoNode::initCb();
+  }
+
   visualizer_.publishMinimal(img, vo_->lastFrame(), *vo_, msg->header.stamp.toSec());
 
   if(publish_markers_ && vo_->stage() != FrameHandlerBase::STAGE_PAUSED)
@@ -160,6 +234,7 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
   std::cout << "create vo_node" << std::endl;
   svo::VoNode vo_node;
+  vo_node.client = nh.serviceClient<svo_msgs::GetBetweenPose>("/omnimapper_ros_node/get_between_pose");
 
   // subscribe to cam msgs
   std::string cam_topic(vk::getParam<std::string>("svo/cam_topic", "camera/image_raw"));
