@@ -37,6 +37,14 @@
 
 #include <svo_msgs/GetBetweenPose.h>
 
+
+#define SSTART           0
+#define SGOT_KEY_1       1
+#define SGOT_KEY_2       2
+#define SGETTING_SCALE   3
+#define SDEFAULT         4
+
+
 namespace svo {
 
 /// SVO Interface
@@ -53,11 +61,15 @@ public:
   vk::AbstractCamera* cam_;
   bool quit_;
 
+  ros::Time time_start = ros::Time::now();
   ros::Time time_first, time_second;
-  ros::Time time_window = ros::Time(5,0);
-  bool init_flag =  false;
-  bool inited_flag =  false;
-  int flagforframe =1;
+  ros::Time time_window = ros::Time(10,0);
+
+  int state = SSTART;
+
+  bool inited_flag_1 =  false;
+  bool inited_flag_2 =  false;
+  bool inited_flag_3 =  false;
 
   VoNode();
   ~VoNode();
@@ -160,29 +172,46 @@ void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
     ROS_ERROR("cv_bridge exception: %s", e.what());
   }
   processUserActions();
+
+  double diff1 = msg->header.stamp.toSec() - time_start.toSec();
+//  std::cout<<"diff1: "<< diff1 <<std::endl;
+
+  if((diff1 > time_window.toSec()) && state == SSTART){
+      vo_->reset();
+      vo_->start();
+      state = SGOT_KEY_1;
+  }
   vo_->addImage(img, msg->header.stamp.toSec());
 
-  if((vo_->stage() == FrameHandlerMono::STAGE_SECOND_FRAME) && !init_flag)
-  {    std::cout<<"the second frame at time: "<<msg->header.stamp.toSec()<<std::endl;
+  if((vo_->stage() == FrameHandlerMono::STAGE_SECOND_FRAME) && state == SGOT_KEY_1)
+  {    std::cout<<"the first frame at time: "<<msg->header.stamp.toSec()<<std::endl;
        time_first = msg->header.stamp;
-       init_flag = true;
+       state = SGOT_KEY_2;
   }
 
-  if((vo_->stage() == FrameHandlerMono::STAGE_DEFAULT_FRAME) && init_flag )
-  {    std::cout<<"the default frame at time: "<<msg->header.stamp.toSec()<<std::endl;
+  if((vo_->stage() == FrameHandlerMono::STAGE_DEFAULT_FRAME) && state == SGOT_KEY_2)
+  {    //std::cout<<"the second frame at time: "<<msg->header.stamp.toSec()<<std::endl;
        time_second = msg->header.stamp;
-       std::cout<<"init_flag: "<<init_flag<<std::endl;
-       init_flag = false;
+       state = SGETTING_SCALE;
   }
 
-  if((abs((time_second - msg->header.stamp).toSec()) > time_window.toNSec()) && !inited_flag){
-      inited_flag = VoNode::initCb();
+  double diff2 = msg->header.stamp.toSec() - time_second.toSec();
+//  std::cout<<"diff2: "<< diff2 <<std::endl;
+//  std::cout<<"state: "<< state <<std::endl;
+
+  if((diff2 > time_window.toSec()) && state == SGETTING_SCALE){
+      std::cout<<"time_first: "<< time_first <<std::endl;
+      std::cout<<"time_second: "<< time_second <<std::endl;
+      if(VoNode::initCb()){
+          state = SDEFAULT;
+      }
   }
 
   visualizer_.publishMinimal(img, vo_->lastFrame(), *vo_, msg->header.stamp.toSec());
 
-  if(publish_markers_ && vo_->stage() != FrameHandlerBase::STAGE_PAUSED)
-    visualizer_.visualizeMarkers(vo_->lastFrame(), vo_->coreKeyframes(), vo_->map());
+  if(publish_markers_){
+      visualizer_.visualizeMarkers(vo_->lastFrame(), vo_->coreKeyframes(), vo_->map(), state == SDEFAULT);
+  }
 
   if(publish_dense_input_)
     visualizer_.exportToDense(vo_->lastFrame());

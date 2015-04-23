@@ -78,6 +78,12 @@ public:
       const set<FramePtr>& core_kfs,
       const Map& map);
 
+  void visualizeMarkers(
+      const FramePtr& frame,
+      const set<FramePtr>& core_kfs,
+      const Map& map,
+      bool inited);
+
   void publishMapRegion(set<FramePtr> frames);
 
   void removeDeletedPts(const Map& map);

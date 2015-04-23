@@ -11,6 +11,17 @@
         <!-- Default parameter settings: choose between vo_fast and vo_accurate -->
         <rosparam file="$(find svo_ros)/param/vo_accurate.yaml" />
 
+        <param name="publish_world_in_cam_frame_" value="false" />
+
+        <!-- Initial camera orientation, make it point downwards -->
+        <param name="init_rx" value="-1.57079632679" />
+        <param name="init_ry" value="0.00" />
+        <param name="init_rz" value="0.00" />
+
     </node>
+
+    <node pkg="tf" type="static_transform_publisher" name="camera_link_broadcaster" args="0 0 0 0 0 0  base_link camera_link 100" />
+   <!-- Same TF as /camera_rgb_optical_frame /camera_link -->
+   <node pkg="tf" type="static_transform_publisher" name="base_link_broadcaster" args="-0.045, 0.000, 0.000 1.571, -1.571, 0.000  cam_pos base_link 100" />
         
 </launch>
