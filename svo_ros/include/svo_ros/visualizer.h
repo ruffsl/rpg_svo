@@ -82,7 +82,9 @@ public:
       const FramePtr& frame,
       const set<FramePtr>& core_kfs,
       const Map& map,
-      bool inited);
+      bool inited,
+      double svo_scale,
+      double our_scale);
 
   void publishMapRegion(set<FramePtr> frames);
 

@@ -95,6 +95,8 @@ InitResult KltHomographyInit::addSecondFrame(FramePtr frame_cur)
       new_point->addFrameRef(ftr_ref);
     }
   }
+  Vector3d svo_scale = scale*(frame_cur->pos() - frame_ref_->pos());
+  svo_scale_ = svo_scale.norm();
   return SUCCESS;
 }
 

@@ -227,7 +227,9 @@ void Visualizer::visualizeMarkers(
     const FramePtr& frame,
     const set<FramePtr>& core_kfs,
     const Map& map,
-    bool inited)
+    bool inited,
+    double svo_scale,
+    double our_scale)
 {
   if((frame == NULL) || !inited)
   {
@@ -238,8 +240,12 @@ void Visualizer::visualizeMarkers(
       return;
   }
 
+  SE3 temp = (frame->T_f_w_*T_world_from_vision_.inverse()).inverse();
+  double scale = our_scale / svo_scale;
+  temp.translation() = temp.translation()* scale;
+
   vk::output_helper::publishTfTransform(
-      (frame->T_f_w_*T_world_from_vision_.inverse()).inverse(),
+      temp,
       ros::Time(frame->timestamp_), "odom", "cam_pos", br_);
 
   if(pub_frames_.getNumSubscribers() > 0 || pub_points_.getNumSubscribers() > 0)

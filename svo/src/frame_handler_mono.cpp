@@ -80,9 +80,6 @@ void FrameHandlerMono::addImage(const cv::Mat& img, const double timestamp)
   if(stage_ == STAGE_DEFAULT_FRAME)
     res = processFrame();
   else if(stage_ == STAGE_SECOND_FRAME){
-      if(init_flag)
-          res = processSecondFrame(init_pose);
-      else
           res = processSecondFrame();
   }
   else if(stage_ == STAGE_FIRST_FRAME)
@@ -114,6 +111,7 @@ FrameHandlerMono::UpdateResult FrameHandlerMono::processFirstFrame()
 FrameHandlerBase::UpdateResult FrameHandlerMono::processSecondFrame()
 {
   initialization::InitResult res = klt_homography_init_.addSecondFrame(new_frame_);
+  svo_scale_ = klt_homography_init_.svo_scale_;
   if(res == initialization::FAILURE)
     return RESULT_FAILURE;
   else if(res == initialization::NO_KEYFRAME)

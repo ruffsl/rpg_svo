@@ -71,6 +71,9 @@ public:
   bool inited_flag_2 =  false;
   bool inited_flag_3 =  false;
 
+  double svo_scale_;
+  double our_scale_;
+
   VoNode();
   ~VoNode();
   void imgCb(const sensor_msgs::ImageConstPtr& msg);
@@ -155,6 +158,7 @@ bool VoNode::initCb(){
         std::cout<<"rot:\n"<<rot<<std::endl;
 
         vo_->InitPose(current_trans);
+        our_scale_ = current_trans.matrix().block<3,1>(0,3).norm();
         return true;
     }
     else{
@@ -182,6 +186,7 @@ void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
       state = SGOT_KEY_1;
   }
   vo_->addImage(img, msg->header.stamp.toSec());
+  svo_scale_ = vo_->svo_scale_;
 
   if((vo_->stage() == FrameHandlerMono::STAGE_SECOND_FRAME) && state == SGOT_KEY_1)
   {    std::cout<<"the first frame at time: "<<msg->header.stamp.toSec()<<std::endl;
@@ -210,7 +215,7 @@ void VoNode::imgCb(const sensor_msgs::ImageConstPtr& msg)
   visualizer_.publishMinimal(img, vo_->lastFrame(), *vo_, msg->header.stamp.toSec());
 
   if(publish_markers_){
-      visualizer_.visualizeMarkers(vo_->lastFrame(), vo_->coreKeyframes(), vo_->map(), state == SDEFAULT);
+      visualizer_.visualizeMarkers(vo_->lastFrame(), vo_->coreKeyframes(), vo_->map(), state == SDEFAULT, svo_scale_, our_scale_);
   }
 
   if(publish_dense_input_)
