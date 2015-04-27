@@ -1,4 +1,5 @@
 <launch>
+    <!-- <param name="/use_sim_time" value="false"/> -->
 
     <node pkg="svo_ros" type="vo" name="svo" clear_params="true" output="screen">
     

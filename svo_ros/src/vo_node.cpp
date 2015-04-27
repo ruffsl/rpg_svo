@@ -67,10 +67,6 @@ public:
 
   int state = SSTART;
 
-  bool inited_flag_1 =  false;
-  bool inited_flag_2 =  false;
-  bool inited_flag_3 =  false;
-
   double svo_scale_;
   double our_scale_;
 
@@ -245,10 +241,14 @@ void VoNode::processUserActions()
       break;
     case 'r':
       vo_->reset();
+      time_start = ros::Time::now();
+      state = SSTART;
       printf("SVO user input: RESET\n");
       break;
     case 's':
       vo_->start();
+      time_start = ros::Time::now();
+      state = SSTART;
       printf("SVO user input: START\n");
       break;
     default: ;

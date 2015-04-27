@@ -53,7 +53,6 @@ void FrameHandlerMono::initialize()
 void FrameHandlerMono::InitPose(SE3 pose)
 {
    init_pose = pose;
-   init_flag = true;
 }
 
 FrameHandlerMono::~FrameHandlerMono()

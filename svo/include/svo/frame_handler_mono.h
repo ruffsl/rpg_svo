@@ -62,7 +62,6 @@ public:
 
 
   SE3 init_pose;
-  bool init_flag = false;
   double svo_scale_;
 
   void InitPose(SE3 pose);
